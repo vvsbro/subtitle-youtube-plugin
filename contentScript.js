@@ -7,8 +7,17 @@
   const MOMENTS_BADGE_ID = 'ytp-custom-moments-badge';
   const ACTION_BUTTON_CLASS = 'ytp-button ytp-transcript-action-button';
   const TRANSCRIPT_PANEL_SELECTORS = [
+    'ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]',
+    '#panels ytd-engagement-panel-section-list-renderer[target-id="PAmodern_transcript_view"]',
     'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
-    '#panels ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]'
+    '#panels ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]',
+    '#panels ytd-engagement-panel-section-list-renderer[target-id*="transcript"]'
+  ];
+  const TRANSCRIPT_CONTENT_SELECTORS = [
+    'ytd-transcript-segment-list-renderer',
+    'yt-section-list-renderer[data-target-id="PAmodern_transcript_view"]',
+    'yt-section-list-renderer[panel-target-id="PAmodern_transcript_view"]',
+    'yt-section-list-renderer'
   ];
   const MOMENTS_STORAGE_PREFIX = 'ytp-custom-moments:';
   const MOMENT_ITEM_KEYS = ['moments', 'chapters', 'items', 'segments'];
@@ -177,7 +186,25 @@
       if (panel) return panel;
     } catch {}
 
+    try {
+      const modernSegment = document.querySelector('transcript-segment-view-model');
+      const panel = modernSegment?.closest?.('ytd-engagement-panel-section-list-renderer');
+      if (panel) return panel;
+    } catch {}
+
     return null;
+  }
+
+  function getTranscriptContentRoot() {
+    const panel = findTranscriptPanel();
+    if (!panel) return null;
+
+    for (const selector of TRANSCRIPT_CONTENT_SELECTORS) {
+      const content = panel.querySelector(selector);
+      if (content) return content;
+    }
+
+    return panel;
   }
 
   function isElementVisible(element) {
@@ -385,15 +412,31 @@
     return null;
   }
 
+  function getTranscriptSegmentNodes() {
+    const root = getTranscriptContentRoot();
+    if (!root) return [];
+
+    const nodes = root.querySelectorAll('ytd-transcript-segment-renderer, transcript-segment-view-model');
+    return Array.from(nodes);
+  }
+
   function readTranscriptSegments() {
-    const list = document.querySelector('ytd-transcript-segment-list-renderer');
-    if (!list) return [];
+    const segments = getTranscriptSegmentNodes();
+    if (!segments.length) return [];
 
     const seen = new Set();
-    return Array.from(list.querySelectorAll('ytd-transcript-segment-renderer'))
+    return segments
       .map((segment) => {
-        const timeNode = segment.querySelector('#timestamp') || segment.querySelector('.segment-timestamp');
-        const textNode = segment.querySelector('#segment-text') || segment.querySelector('yt-formatted-string');
+        const timeNode =
+          segment.querySelector('#timestamp') ||
+          segment.querySelector('.segment-timestamp') ||
+          segment.querySelector('.ytwTranscriptSegmentViewModelTimestamp') ||
+          segment.querySelector('.ytwTranscriptSegmentViewModelTimestampActive');
+        const textNode =
+          segment.querySelector('#segment-text') ||
+          segment.querySelector('yt-formatted-string') ||
+          segment.querySelector('.ytAttributedStringHost') ||
+          segment.querySelector('span[role="text"]');
         const time = (timeNode?.textContent || '').trim();
         const text = (textNode?.textContent || '').replace(/\s+/g, ' ').trim();
         if (!time && !text) return null;
@@ -405,16 +448,36 @@
       .filter(Boolean);
   }
 
-  function getTranscriptScrollContainer() {
-    const list = document.querySelector('ytd-transcript-segment-list-renderer');
-    if (!list) return null;
+  async function waitForTranscriptContent(timeoutMs) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (readTranscriptSegments().length > 0) return true;
+      if (getTranscriptContentRoot()) {
+        const segmentNodes = getTranscriptSegmentNodes();
+        if (segmentNodes.length > 0) return true;
+      }
+      await sleep(200);
+    }
+    return false;
+  }
 
-    return (
-      list.querySelector('#segments-container') ||
-      list.querySelector('tp-yt-paper-dialog-scrollable') ||
-      list.querySelector('yt-scrollbar') ||
-      list
-    );
+  function getTranscriptScrollContainer() {
+    const panel = findTranscriptPanel();
+    if (!panel) return null;
+
+    const candidates = [
+      panel.querySelector('ytd-transcript-segment-list-renderer #segments-container'),
+      panel.querySelector('ytd-transcript-segment-list-renderer'),
+      panel.querySelector('yt-section-list-renderer .ytSectionListRendererContents'),
+      panel.querySelector('yt-section-list-renderer'),
+      panel.querySelector('#content')
+    ].filter(Boolean);
+
+    for (const candidate of candidates) {
+      if (candidate.scrollHeight > candidate.clientHeight + 10) return candidate;
+    }
+
+    return candidates[0] || null;
   }
 
   async function readAllTranscriptSegments(maxMs) {
@@ -460,8 +523,8 @@
       panel = findTranscriptPanel();
     }
 
-    const list = await waitForElement('ytd-transcript-segment-list-renderer', 9000);
-    if (!list) return [];
+    const hasTranscriptContent = await waitForTranscriptContent(9000);
+    if (!hasTranscriptContent) return [];
 
     const items = await readAllTranscriptSegments(45000);
     await dismissTranscriptPanelAfterCapture();
