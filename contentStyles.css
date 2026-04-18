@@ -1,9 +1,9 @@
-.ytp-transcript-download-button {
+.ytp-transcript-action-button {
   position: relative;
 }
 
-.ytp-transcript-download-button .ytp-transcript-download-icon,
-.ytp-transcript-download-button .ytp-transcript-download-spinner {
+.ytp-transcript-action-button .ytp-transcript-action-icon,
+.ytp-transcript-action-button .ytp-transcript-action-spinner {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -11,41 +11,41 @@
   height: 100%;
 }
 
-.ytp-transcript-download-button svg {
+.ytp-transcript-action-button svg {
   display: block;
   width: 100%;
   height: 100%;
 }
 
-.ytp-transcript-download-button .ytp-transcript-download-spinner,
-.ytp-transcript-download-button[data-state='loading'] .ytp-transcript-download-icon,
-.ytp-transcript-download-button[data-state='success'] .ytp-transcript-download-icon,
-.ytp-transcript-download-button[data-state='error'] .ytp-transcript-download-icon {
+.ytp-transcript-action-button .ytp-transcript-action-spinner,
+.ytp-transcript-action-button[data-state='loading'] .ytp-transcript-action-icon,
+.ytp-transcript-action-button[data-state='success'] .ytp-transcript-action-icon,
+.ytp-transcript-action-button[data-state='error'] .ytp-transcript-action-icon {
   display: none;
 }
 
-.ytp-transcript-download-button[data-state='loading'] .ytp-transcript-download-spinner {
+.ytp-transcript-action-button[data-state='loading'] .ytp-transcript-action-spinner {
   display: inline-flex;
 }
 
-.ytp-transcript-download-button[data-state='success'] .ytp-transcript-download-icon,
-.ytp-transcript-download-button[data-state='error'] .ytp-transcript-download-icon {
+.ytp-transcript-action-button[data-state='success'] .ytp-transcript-action-icon,
+.ytp-transcript-action-button[data-state='error'] .ytp-transcript-action-icon {
   display: inline-flex;
 }
 
-.ytp-transcript-download-button[data-state='loading'] {
+.ytp-transcript-action-button[data-state='loading'] {
   opacity: 0.9;
 }
 
-.ytp-transcript-download-button[data-state='loading'] svg {
+.ytp-transcript-action-button[data-state='loading'] svg {
   animation: ytp-transcript-spin 0.9s linear infinite;
 }
 
-.ytp-transcript-download-button[data-state='success'] {
+.ytp-transcript-action-button[data-state='success'] {
   color: #4ade80;
 }
 
-.ytp-transcript-download-button[data-state='error'] {
+.ytp-transcript-action-button[data-state='error'] {
   color: #f87171;
 }
 
@@ -81,6 +81,119 @@
 
 .ytp-transcript-download-toast[data-kind='error'] {
   background: rgba(127, 29, 29, 0.96);
+}
+
+.ytp-custom-moments-markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ytp-custom-moment-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 214, 10, 0.95);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.ytp-custom-moment-marker:hover {
+  background: #fff08a;
+}
+
+.ytp-custom-moments-badge {
+  margin-left: 10px;
+  padding: 0 10px;
+  max-width: 260px;
+  height: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(15, 15, 15, 0.88);
+  color: #fff;
+  font: 500 12px/24px Roboto, Arial, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ytp-custom-moments-panel {
+  position: absolute;
+  right: 16px;
+  bottom: 68px;
+  z-index: 30;
+  width: min(300px, calc(100% - 32px));
+  max-height: 240px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(16, 16, 16, 0.88);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+}
+
+.ytp-custom-moments-header {
+  padding: 10px 12px 8px;
+  color: rgba(255, 255, 255, 0.72);
+  font: 700 11px/1.2 Roboto, Arial, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ytp-custom-moments-list {
+  max-height: 194px;
+  overflow: auto;
+  padding: 0 6px 6px;
+}
+
+.ytp-custom-moment-item {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ytp-custom-moment-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ytp-custom-moment-item.is-active {
+  background: rgba(255, 214, 10, 0.16);
+}
+
+.ytp-custom-moment-time {
+  color: #ffd60a;
+  font: 700 12px/1.2 Roboto, Arial, sans-serif;
+}
+
+.ytp-custom-moment-title {
+  color: #fff;
+  font: 500 12px/1.35 Roboto, Arial, sans-serif;
+}
+
+@media (max-width: 900px) {
+  .ytp-custom-moments-panel {
+    right: 10px;
+    bottom: 58px;
+    width: min(240px, calc(100% - 20px));
+  }
+
+  .ytp-custom-moments-badge {
+    max-width: 180px;
+  }
 }
 
 @keyframes ytp-transcript-spin {

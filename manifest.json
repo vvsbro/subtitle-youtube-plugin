@@ -2,7 +2,10 @@
   "manifest_version": 3,
   "name": "YouTube Subtitle Downloader",
   "version": "1.0.0",
-  "description": "Adds a YouTube player button that downloads the current video's subtitles as a TXT file.",
+  "description": "Adds YouTube player buttons for subtitle export and custom moments JSON import.",
+  "permissions": [
+    "clipboardRead"
+  ],
   "content_scripts": [
     {
       "matches": [
