@@ -5,6 +5,8 @@ Chrome extension for YouTube with two player actions:
 - `Download subtitles`: saves the current video's subtitles to a `.txt` file and appends two ready-made ChatGPT prompt blocks.
 - `Paste moments JSON`: reads JSON from the clipboard and renders custom moments directly on the current player.
 
+Custom moments are now saved per video in local extension storage, so the overlay survives page reloads and is restored only for that specific video. If a new JSON paste fails, the last valid moments for the current video stay in place.
+
 ## Expected JSON format
 
 ```json

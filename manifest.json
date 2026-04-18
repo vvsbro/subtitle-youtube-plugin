@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "Adds YouTube player buttons for subtitle export and custom moments JSON import.",
   "permissions": [
-    "clipboardRead"
+    "clipboardRead",
+    "storage"
   ],
   "content_scripts": [
     {

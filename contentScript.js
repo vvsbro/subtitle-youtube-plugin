@@ -12,6 +12,7 @@
   ];
   const MOMENTS_STORAGE_PREFIX = 'ytp-custom-moments:';
   const MOMENT_ITEM_KEYS = ['moments', 'chapters', 'items', 'segments'];
+  const MOMENTS_STORAGE_VERSION = 1;
 
   let lastVideoId = '';
   let ensureScheduled = false;
@@ -19,6 +20,8 @@
   let boundVideoElement = null;
   let activeMoments = [];
   let activeMomentsVideoId = '';
+  let activeMomentsLoadedVideoId = '';
+  let momentsSyncRequestId = 0;
 
   const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -760,24 +763,72 @@
     return `${MOMENTS_STORAGE_PREFIX}${videoId}`;
   }
 
-  function saveMoments(videoId, moments) {
-    if (!videoId) return;
+  function getExtensionStorageArea() {
     try {
-      window.localStorage.setItem(getStorageKey(videoId), JSON.stringify({ moments }));
+      return globalThis.chrome?.storage?.local || null;
     } catch {}
+    return null;
   }
 
-  function loadMoments(videoId) {
-    if (!videoId) return [];
-    try {
-      const raw = window.localStorage.getItem(getStorageKey(videoId));
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      const items = extractMomentItems(parsed);
-      return normalizeMoments(items);
-    } catch {
-      return [];
+  function buildStoredMomentsPayload(videoId, moments) {
+    return {
+      version: MOMENTS_STORAGE_VERSION,
+      videoId,
+      updatedAt: Date.now(),
+      moments
+    };
+  }
+
+  async function readStoredValue(key) {
+    const storageArea = getExtensionStorageArea();
+    if (storageArea?.get) {
+      try {
+        const result = await storageArea.get(key);
+        return result?.[key];
+      } catch {}
     }
+
+    try {
+      const raw = window.localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async function writeStoredValue(key, value) {
+    const storageArea = getExtensionStorageArea();
+    if (storageArea?.set) {
+      try {
+        await storageArea.set({ [key]: value });
+        return true;
+      } catch {}
+    }
+
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function extractStoredMoments(payload) {
+    if (!payload || typeof payload !== 'object') return [];
+    const items = Array.isArray(payload?.moments) ? payload.moments : extractMomentItems(payload);
+    return normalizeMoments(items);
+  }
+
+  async function saveMoments(videoId, moments) {
+    if (!videoId) return false;
+    const payload = buildStoredMomentsPayload(videoId, moments);
+    return writeStoredValue(getStorageKey(videoId), payload);
+  }
+
+  async function loadMoments(videoId) {
+    if (!videoId) return [];
+    const payload = await readStoredValue(getStorageKey(videoId));
+    return extractStoredMoments(payload);
   }
 
   function clearMomentUi() {
@@ -937,33 +988,49 @@
     renderMomentPanel();
   }
 
-  function applyMomentsToCurrentVideo(moments) {
+  async function applyMomentsToCurrentVideo(moments) {
     const videoId = getVideoId();
     if (!videoId) throw new Error('Open a YouTube watch page first');
 
     activeMoments = moments;
     activeMomentsVideoId = videoId;
-    saveMoments(videoId, moments);
+    activeMomentsLoadedVideoId = videoId;
     updateMomentUi();
+
+    const saved = await saveMoments(videoId, moments);
+    if (!saved) {
+      throw new Error('Moments applied, but local save failed');
+    }
   }
 
-  function syncMomentsForCurrentVideo() {
+  async function syncMomentsForCurrentVideo() {
     const videoId = getVideoId();
     if (!videoId) {
       activeMoments = [];
       activeMomentsVideoId = '';
+      activeMomentsLoadedVideoId = '';
       clearMomentUi();
       return;
     }
 
-    if (activeMomentsVideoId === videoId && activeMoments.length) {
+    if (activeMomentsLoadedVideoId === videoId) {
       updateMomentUi();
       return;
     }
 
-    const stored = loadMoments(videoId);
+    if (activeMomentsVideoId !== videoId) {
+      activeMoments = [];
+      activeMomentsVideoId = videoId;
+      clearMomentUi();
+    }
+
+    const requestId = ++momentsSyncRequestId;
+    const stored = await loadMoments(videoId);
+    if (requestId !== momentsSyncRequestId) return;
+
     activeMoments = stored;
     activeMomentsVideoId = videoId;
+    activeMomentsLoadedVideoId = videoId;
     updateMomentUi();
   }
 
@@ -1053,7 +1120,7 @@
 
       syncVideoListeners();
       ensureButtons();
-      syncMomentsForCurrentVideo();
+      void syncMomentsForCurrentVideo();
     });
   }
 
