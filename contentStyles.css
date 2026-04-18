@@ -108,47 +108,62 @@
 }
 
 .ytp-custom-moments-badge {
-  margin-left: 10px;
-  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
   max-width: 260px;
-  height: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  background: rgba(15, 15, 15, 0.88);
+  margin-left: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #fff;
-  font: 500 12px/24px Roboto, Arial, sans-serif;
+  font: 400 12px/1.2 Roboto, Arial, sans-serif;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.ytp-custom-moments-badge::before {
+  content: "•";
+  margin-right: 8px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.ytp-custom-moments-badge:hover {
+  color: #fff;
+  text-decoration: underline;
 }
 
 .ytp-custom-moments-panel {
   position: absolute;
-  right: 16px;
-  bottom: 68px;
+  left: 12px;
+  bottom: 50px;
   z-index: 30;
-  width: min(300px, calc(100% - 32px));
-  max-height: 240px;
+  width: min(340px, calc(100% - 24px));
+  max-height: 224px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
   background: rgba(16, 16, 16, 0.88);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(12px);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
 }
 
-.ytp-custom-moments-header {
-  padding: 10px 12px 8px;
-  color: rgba(255, 255, 255, 0.72);
-  font: 700 11px/1.2 Roboto, Arial, sans-serif;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.html5-video-player:not(.ytp-autohide) .ytp-progress-bar-container:hover + .ytp-custom-moments-panel,
+.html5-video-player:not(.ytp-autohide) .ytp-custom-moments-panel:hover {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .ytp-custom-moments-list {
-  max-height: 194px;
+  max-height: 224px;
   overflow: auto;
-  padding: 0 6px 6px;
+  padding: 6px;
 }
 
 .ytp-custom-moment-item {
@@ -186,8 +201,8 @@
 
 @media (max-width: 900px) {
   .ytp-custom-moments-panel {
-    right: 10px;
-    bottom: 58px;
+    left: 10px;
+    bottom: 44px;
     width: min(240px, calc(100% - 20px));
   }
 

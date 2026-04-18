@@ -967,7 +967,8 @@
   }
 
   function renderMomentBadge() {
-    const timeDisplay = document.querySelector('.ytp-time-display');
+    const leftControls = document.querySelector('.ytp-left-controls');
+    const timeDisplay = leftControls?.querySelector('.ytp-time-display');
     if (!timeDisplay || !activeMoments.length) {
       document.getElementById(MOMENTS_BADGE_ID)?.remove();
       return;
@@ -991,8 +992,10 @@
   }
 
   function renderMomentPanel() {
-    const playerRoot = getPlayerRoot();
-    if (!playerRoot || !activeMoments.length) {
+    const chromeBottom = document.querySelector('.ytp-chrome-bottom');
+    const progressContainer = chromeBottom?.querySelector('.ytp-progress-bar-container');
+    const controls = chromeBottom?.querySelector('.ytp-chrome-controls');
+    if (!chromeBottom || !progressContainer || !controls || !activeMoments.length) {
       document.getElementById(MOMENTS_PANEL_ID)?.remove();
       return;
     }
@@ -1002,16 +1005,13 @@
       panel = document.createElement('div');
       panel.id = MOMENTS_PANEL_ID;
       panel.className = 'ytp-custom-moments-panel';
-      playerRoot.appendChild(panel);
+      chromeBottom.insertBefore(panel, controls);
+    } else if (panel.parentElement !== chromeBottom || panel.nextElementSibling !== controls) {
+      chromeBottom.insertBefore(panel, controls);
     }
 
     const current = getCurrentMoment();
     panel.textContent = '';
-
-    const header = document.createElement('div');
-    header.className = 'ytp-custom-moments-header';
-    header.textContent = 'Custom moments';
-    panel.appendChild(header);
 
     const list = document.createElement('div');
     list.className = 'ytp-custom-moments-list';
