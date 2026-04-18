@@ -182,8 +182,8 @@
 
 .ytp-custom-moments-panel {
   position: absolute;
-  left: 12px;
-  bottom: 50px;
+  left: 44px;
+  bottom: 62px;
   z-index: 30;
   width: min(340px, calc(100% - 24px));
   max-height: 224px;
@@ -263,8 +263,8 @@
 
 @media (max-width: 900px) {
   .ytp-custom-moments-panel {
-    left: 10px;
-    bottom: 44px;
+    left: 24px;
+    bottom: 54px;
     width: min(240px, calc(100% - 20px));
   }
 
