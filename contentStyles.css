@@ -1,0 +1,94 @@
+.ytp-transcript-download-button {
+  position: relative;
+}
+
+.ytp-transcript-download-button .ytp-transcript-download-icon,
+.ytp-transcript-download-button .ytp-transcript-download-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.ytp-transcript-download-button svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ytp-transcript-download-button .ytp-transcript-download-spinner,
+.ytp-transcript-download-button[data-state='loading'] .ytp-transcript-download-icon,
+.ytp-transcript-download-button[data-state='success'] .ytp-transcript-download-icon,
+.ytp-transcript-download-button[data-state='error'] .ytp-transcript-download-icon {
+  display: none;
+}
+
+.ytp-transcript-download-button[data-state='loading'] .ytp-transcript-download-spinner {
+  display: inline-flex;
+}
+
+.ytp-transcript-download-button[data-state='success'] .ytp-transcript-download-icon,
+.ytp-transcript-download-button[data-state='error'] .ytp-transcript-download-icon {
+  display: inline-flex;
+}
+
+.ytp-transcript-download-button[data-state='loading'] {
+  opacity: 0.9;
+}
+
+.ytp-transcript-download-button[data-state='loading'] svg {
+  animation: ytp-transcript-spin 0.9s linear infinite;
+}
+
+.ytp-transcript-download-button[data-state='success'] {
+  color: #4ade80;
+}
+
+.ytp-transcript-download-button[data-state='error'] {
+  color: #f87171;
+}
+
+.ytp-transcript-download-toast {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 2147483647;
+  transform: translateY(-10px);
+  min-width: 220px;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(18, 18, 18, 0.96);
+  color: #fff;
+  font: 500 13px/1.35 Roboto, Arial, sans-serif;
+  letter-spacing: 0.2px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.ytp-transcript-download-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ytp-transcript-download-toast[data-kind='success'] {
+  background: rgba(20, 83, 45, 0.96);
+}
+
+.ytp-transcript-download-toast[data-kind='error'] {
+  background: rgba(127, 29, 29, 0.96);
+}
+
+@keyframes ytp-transcript-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
