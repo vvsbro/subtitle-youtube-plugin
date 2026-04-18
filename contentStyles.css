@@ -93,23 +93,44 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 3px;
-  margin-left: -1px;
+  width: 12px;
+  margin-left: -6px;
   border: 0;
-  border-radius: 999px;
-  background: rgba(255, 214, 10, 0.95);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+  background: transparent;
+  box-shadow: none;
   cursor: pointer;
   pointer-events: auto;
 }
 
+.ytp-custom-moment-marker::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 50%;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.82));
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16), 0 0 10px rgba(255, 255, 255, 0.18);
+  transform: translateX(-50%) skewX(-12deg);
+  transition: width 140ms ease, background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
 .ytp-custom-moment-marker:hover {
-  background: #fff08a;
+  background: transparent;
+}
+
+.ytp-custom-moment-marker:hover::before {
+  width: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.9));
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16), 0 0 14px rgba(255, 255, 255, 0.24);
+  transform: translateX(-50%) skewX(-12deg) scaleY(1.04);
 }
 
 .ytp-custom-moments-badge {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   max-width: 260px;
   margin-left: 8px;
   padding: 0;
@@ -121,17 +142,42 @@
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+  transition: color 180ms ease;
 }
 
-.ytp-custom-moments-badge::before {
-  content: "•";
-  margin-right: 8px;
-  color: rgba(255, 255, 255, 0.7);
+.ytp-custom-moments-badge-icon {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), 0 0 10px rgba(34, 197, 94, 0.34);
+  transition: background-color 220ms ease, box-shadow 220ms ease, transform 220ms ease;
+}
+
+.ytp-custom-moments-badge-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ytp-custom-moments-badge[data-state='upcoming'] .ytp-custom-moments-badge-icon {
+  background: #f59e0b;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), 0 0 10px rgba(245, 158, 11, 0.36);
+}
+
+.ytp-custom-moments-badge[data-state='current'] .ytp-custom-moments-badge-icon {
+  background: #22c55e;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), 0 0 10px rgba(34, 197, 94, 0.34);
+}
+
+.ytp-custom-moments-badge.is-updating .ytp-custom-moments-badge-icon,
+.ytp-custom-moments-badge.is-updating .ytp-custom-moments-badge-label {
+  animation: ytp-custom-moment-badge-swap 220ms ease;
 }
 
 .ytp-custom-moments-badge:hover {
   color: #fff;
-  text-decoration: underline;
 }
 
 .ytp-custom-moments-panel {
@@ -218,5 +264,17 @@
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes ytp-custom-moment-badge-swap {
+  0% {
+    opacity: 0.45;
+    transform: translateY(2px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

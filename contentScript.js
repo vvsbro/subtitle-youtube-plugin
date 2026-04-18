@@ -22,6 +22,7 @@
   const MOMENTS_STORAGE_PREFIX = 'ytp-custom-moments:';
   const MOMENT_ITEM_KEYS = ['moments', 'chapters', 'items', 'segments'];
   const MOMENTS_STORAGE_VERSION = 1;
+  const UPCOMING_MOMENT_LEAD_SECONDS = 12;
 
   let lastVideoId = '';
   let ensureScheduled = false;
@@ -900,12 +901,15 @@
     document.getElementById(MOMENTS_BADGE_ID)?.remove();
   }
 
+  function getPlaybackTime() {
+    return Number(getVideoElement()?.currentTime || 0);
+  }
+
   function getCurrentMoment() {
     if (!activeMoments.length) return null;
-    const video = getVideoElement();
-    const currentTime = Number(video?.currentTime || 0);
+    const currentTime = getPlaybackTime();
 
-    let current = activeMoments[0];
+    let current = null;
     for (const moment of activeMoments) {
       if (moment.seconds <= currentTime + 0.25) {
         current = moment;
@@ -915,6 +919,32 @@
     }
 
     return current;
+  }
+
+  function getNextMoment() {
+    if (!activeMoments.length) return null;
+    const currentTime = getPlaybackTime();
+    return activeMoments.find((moment) => moment.seconds > currentTime + 0.25) || null;
+  }
+
+  function getMomentBadgeDisplay() {
+    const current = getCurrentMoment();
+    const next = getNextMoment();
+    const currentTime = getPlaybackTime();
+
+    if (next && next.seconds - currentTime <= UPCOMING_MOMENT_LEAD_SECONDS) {
+      return { moment: next, state: 'upcoming' };
+    }
+
+    if (current) {
+      return { moment: current, state: 'current' };
+    }
+
+    if (next) {
+      return { moment: next, state: 'upcoming' };
+    }
+
+    return null;
   }
 
   function seekToMoment(moment) {
@@ -980,15 +1010,32 @@
       badge.id = MOMENTS_BADGE_ID;
       badge.className = 'ytp-custom-moments-badge';
       badge.type = 'button';
+      badge.innerHTML = `
+        <span class="ytp-custom-moments-badge-icon" aria-hidden="true"></span>
+        <span class="ytp-custom-moments-badge-label"></span>
+      `;
       timeDisplay.insertAdjacentElement('afterend', badge);
     }
 
-    const current = getCurrentMoment();
-    badge.hidden = !current;
-    if (!current) return;
-    badge.textContent = current.title;
-    badge.title = `${current.time} ${current.title}`;
-    badge.onclick = () => seekToMoment(current);
+    const display = getMomentBadgeDisplay();
+    badge.hidden = !display;
+    if (!display) return;
+
+    const { moment, state } = display;
+    const key = `${state}:${moment.seconds}:${moment.title}`;
+    const label = badge.querySelector('.ytp-custom-moments-badge-label');
+
+    if (badge.dataset.momentKey !== key) {
+      badge.dataset.momentKey = key;
+      badge.classList.remove('is-updating');
+      void badge.offsetWidth;
+      badge.classList.add('is-updating');
+    }
+
+    badge.dataset.state = state;
+    if (label) label.textContent = moment.title;
+    badge.title = `${moment.time} ${moment.title}`;
+    badge.onclick = () => seekToMoment(moment);
   }
 
   function renderMomentPanel() {
