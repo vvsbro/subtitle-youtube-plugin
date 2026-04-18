@@ -208,8 +208,11 @@
 
 .ytp-custom-moments-list {
   max-height: 224px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 6px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .ytp-custom-moment-item {
@@ -236,13 +239,26 @@
 }
 
 .ytp-custom-moment-time {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #ffd60a;
   font: 700 12px/1.2 Roboto, Arial, sans-serif;
+  cursor: pointer;
+}
+
+.ytp-custom-moment-time:hover {
+  color: #ffe082;
 }
 
 .ytp-custom-moment-title {
   color: #fff;
   font: 500 12px/1.35 Roboto, Arial, sans-serif;
+  min-width: 0;
 }
 
 @media (max-width: 900px) {

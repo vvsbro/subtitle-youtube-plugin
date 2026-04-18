@@ -1081,6 +1081,93 @@
     badge.onclick = () => seekToMoment(moment);
   }
 
+  function getMomentPanelRenderKey() {
+    return activeMoments.map((moment) => `${moment.seconds}:${moment.title}`).join('|');
+  }
+
+  function scrollMomentItemIntoCenter(container, item) {
+    if (!container || !item) return;
+
+    const itemTop = item.offsetTop;
+    const itemHeight = item.offsetHeight;
+    const targetTop = Math.max(0, itemTop - container.clientHeight / 2 + itemHeight / 2);
+
+    container.scrollTo({
+      top: targetTop,
+      behavior: 'smooth'
+    });
+  }
+
+  function updateMomentPanelSelection(panel, current) {
+    const list = panel?.querySelector('.ytp-custom-moments-list');
+    if (!list) return;
+
+    let activeItem = null;
+    const activeKey = current ? `${current.seconds}:${current.title}` : '';
+    for (const item of list.querySelectorAll('.ytp-custom-moment-item')) {
+      const isActive =
+        current &&
+        item.dataset.seconds === String(current.seconds) &&
+        item.dataset.title === current.title;
+
+      item.classList.toggle('is-active', Boolean(isActive));
+      if (isActive) activeItem = item;
+    }
+
+    if (activeItem && panel.dataset.activeKey !== activeKey) {
+      panel.dataset.activeKey = activeKey;
+      scrollMomentItemIntoCenter(list, activeItem);
+    } else if (!activeItem) {
+      panel.dataset.activeKey = '';
+    }
+  }
+
+  function buildMomentPanelList(panel) {
+    if (!panel) return;
+
+    const list = document.createElement('div');
+    list.className = 'ytp-custom-moments-list';
+    list.addEventListener('wheel', (event) => {
+      event.stopPropagation();
+    });
+
+    for (const moment of activeMoments) {
+      const item = document.createElement('div');
+      item.className = 'ytp-custom-moment-item';
+      item.tabIndex = 0;
+      item.setAttribute('role', 'button');
+      item.dataset.seconds = String(moment.seconds);
+      item.dataset.title = moment.title;
+      item.addEventListener('click', () => seekToMoment(moment));
+      item.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        seekToMoment(moment);
+      });
+
+      const time = document.createElement('button');
+      time.className = 'ytp-custom-moment-time';
+      time.type = 'button';
+      time.textContent = moment.time;
+      time.title = `Jump to ${moment.time}`;
+      time.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        seekToMoment(moment);
+      });
+
+      const title = document.createElement('span');
+      title.className = 'ytp-custom-moment-title';
+      title.textContent = moment.title;
+
+      item.append(time, title);
+      list.appendChild(item);
+    }
+
+    panel.replaceChildren(list);
+    panel.dataset.renderKey = getMomentPanelRenderKey();
+  }
+
   function renderMomentPanel() {
     const chromeBottom = document.querySelector('.ytp-chrome-bottom');
     const progressContainer = chromeBottom?.querySelector('.ytp-progress-bar-container');
@@ -1101,33 +1188,12 @@
     }
 
     const current = getCurrentMoment();
-    panel.textContent = '';
-
-    const list = document.createElement('div');
-    list.className = 'ytp-custom-moments-list';
-
-    for (const moment of activeMoments) {
-      const item = document.createElement('button');
-      item.className = 'ytp-custom-moment-item';
-      if (current && current.seconds === moment.seconds && current.title === moment.title) {
-        item.classList.add('is-active');
-      }
-      item.type = 'button';
-      item.addEventListener('click', () => seekToMoment(moment));
-
-      const time = document.createElement('span');
-      time.className = 'ytp-custom-moment-time';
-      time.textContent = moment.time;
-
-      const title = document.createElement('span');
-      title.className = 'ytp-custom-moment-title';
-      title.textContent = moment.title;
-
-      item.append(time, title);
-      list.appendChild(item);
+    const renderKey = getMomentPanelRenderKey();
+    if (panel.dataset.renderKey !== renderKey) {
+      buildMomentPanelList(panel);
     }
 
-    panel.appendChild(list);
+    updateMomentPanelSelection(panel, current);
   }
 
   function updateMomentUi() {
