@@ -15,6 +15,9 @@
   ];
   const TRANSCRIPT_CONTENT_SELECTORS = [
     'ytd-transcript-segment-list-renderer',
+    'ytd-transcript-renderer ytd-transcript-search-panel-renderer',
+    'ytd-transcript-renderer',
+    'ytd-transcript-search-panel-renderer',
     'yt-section-list-renderer[data-target-id="PAmodern_transcript_view"]',
     'yt-section-list-renderer[panel-target-id="PAmodern_transcript_view"]',
     'yt-section-list-renderer'
@@ -192,6 +195,12 @@
     try {
       const modernSegment = document.querySelector('transcript-segment-view-model');
       const panel = modernSegment?.closest?.('ytd-engagement-panel-section-list-renderer');
+      if (panel) return panel;
+    } catch {}
+
+    try {
+      const transcriptRenderer = document.querySelector('ytd-transcript-renderer');
+      const panel = transcriptRenderer?.closest?.('ytd-engagement-panel-section-list-renderer');
       if (panel) return panel;
     } catch {}
 
@@ -471,6 +480,9 @@
     const candidates = [
       panel.querySelector('ytd-transcript-segment-list-renderer #segments-container'),
       panel.querySelector('ytd-transcript-segment-list-renderer'),
+      panel.querySelector('ytd-transcript-renderer #content'),
+      panel.querySelector('ytd-transcript-search-panel-renderer #body'),
+      panel.querySelector('ytd-transcript-renderer #body'),
       panel.querySelector('yt-section-list-renderer .ytSectionListRendererContents'),
       panel.querySelector('yt-section-list-renderer'),
       panel.querySelector('#content')
