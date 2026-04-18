@@ -161,7 +161,7 @@
   text-overflow: ellipsis;
 }
 
-.ytp-custom-moments-badge[data-state='upcoming'] .ytp-custom-moments-badge-icon {
+.ytp-custom-moments-badge[data-state='preview'] .ytp-custom-moments-badge-icon {
   background: #f59e0b;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18), 0 0 10px rgba(245, 158, 11, 0.36);
 }

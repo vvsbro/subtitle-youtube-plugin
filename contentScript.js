@@ -22,16 +22,18 @@
   const MOMENTS_STORAGE_PREFIX = 'ytp-custom-moments:';
   const MOMENT_ITEM_KEYS = ['moments', 'chapters', 'items', 'segments'];
   const MOMENTS_STORAGE_VERSION = 1;
-  const UPCOMING_MOMENT_LEAD_SECONDS = 12;
 
   let lastVideoId = '';
   let ensureScheduled = false;
   let toastTimer = null;
   let boundVideoElement = null;
+  let boundTimelineContainer = null;
+  let boundFineScrubbingThumbnails = null;
   let activeMoments = [];
   let activeMomentsVideoId = '';
   let activeMomentsLoadedVideoId = '';
   let momentsSyncRequestId = 0;
+  let previewTimelineTime = null;
 
   const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -905,9 +907,10 @@
     return Number(getVideoElement()?.currentTime || 0);
   }
 
-  function getCurrentMoment() {
+  function getMomentAtTime(time) {
     if (!activeMoments.length) return null;
-    const currentTime = getPlaybackTime();
+    const currentTime = Number(time);
+    if (!Number.isFinite(currentTime)) return null;
 
     let current = null;
     for (const moment of activeMoments) {
@@ -921,27 +924,29 @@
     return current;
   }
 
-  function getNextMoment() {
+  function getCurrentMoment() {
+    return getMomentAtTime(getPlaybackTime());
+  }
+
+  function getNextMomentAtTime(time) {
     if (!activeMoments.length) return null;
-    const currentTime = getPlaybackTime();
+    const currentTime = Number(time);
+    if (!Number.isFinite(currentTime)) return null;
     return activeMoments.find((moment) => moment.seconds > currentTime + 0.25) || null;
   }
 
   function getMomentBadgeDisplay() {
-    const current = getCurrentMoment();
-    const next = getNextMoment();
-    const currentTime = getPlaybackTime();
-
-    if (next && next.seconds - currentTime <= UPCOMING_MOMENT_LEAD_SECONDS) {
-      return { moment: next, state: 'upcoming' };
+    if (Number.isFinite(previewTimelineTime)) {
+      const previewMoment = getMomentAtTime(previewTimelineTime) || getNextMomentAtTime(previewTimelineTime);
+      if (previewMoment) {
+        return { moment: previewMoment, state: 'preview' };
+      }
+      return null;
     }
 
+    const current = getCurrentMoment();
     if (current) {
       return { moment: current, state: 'current' };
-    }
-
-    if (next) {
-      return { moment: next, state: 'upcoming' };
     }
 
     return null;
@@ -955,6 +960,44 @@
       video.currentTime = moment.seconds;
       video.dispatchEvent(new Event('timeupdate'));
     } catch {}
+  }
+
+  function setPreviewTimelineTime(value) {
+    const nextValue = Number.isFinite(value) ? Math.max(0, value) : null;
+    if (nextValue === null && previewTimelineTime === null) return;
+    if (nextValue !== null && previewTimelineTime !== null && Math.abs(nextValue - previewTimelineTime) < 0.05) return;
+    previewTimelineTime = nextValue;
+    renderMomentBadge();
+  }
+
+  function clearPreviewTimelineTime() {
+    if (previewTimelineTime === null) return;
+    previewTimelineTime = null;
+    renderMomentBadge();
+  }
+
+  function resolveTimelinePreviewTime(event, target) {
+    const element = target;
+    if (!element || typeof event?.clientX !== 'number') return null;
+
+    const duration = getVideoDuration();
+    if (!duration) return null;
+
+    const rect = element.getBoundingClientRect();
+    if (!rect.width) return null;
+
+    const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    return duration * ratio;
+  }
+
+  function handleTimelinePointerMove(event) {
+    const progressBar = document.querySelector('.ytp-progress-bar');
+    const reference = progressBar || event.currentTarget;
+    setPreviewTimelineTime(resolveTimelinePreviewTime(event, reference));
+  }
+
+  function handleFineScrubbingPointerMove(event) {
+    setPreviewTimelineTime(resolveTimelinePreviewTime(event, event.currentTarget));
   }
 
   function renderMomentMarkers() {
@@ -1148,6 +1191,36 @@
     updateMomentUi();
   }
 
+  function syncTimelineListeners() {
+    const timelineContainer = document.querySelector('.ytp-progress-bar-container');
+    if (timelineContainer !== boundTimelineContainer) {
+      if (boundTimelineContainer) {
+        boundTimelineContainer.removeEventListener('mousemove', handleTimelinePointerMove);
+        boundTimelineContainer.removeEventListener('mouseleave', clearPreviewTimelineTime);
+      }
+
+      boundTimelineContainer = timelineContainer;
+      if (boundTimelineContainer) {
+        boundTimelineContainer.addEventListener('mousemove', handleTimelinePointerMove);
+        boundTimelineContainer.addEventListener('mouseleave', clearPreviewTimelineTime);
+      }
+    }
+
+    const fineScrubbingThumbnails = document.querySelector('.ytp-fine-scrubbing-thumbnails');
+    if (fineScrubbingThumbnails !== boundFineScrubbingThumbnails) {
+      if (boundFineScrubbingThumbnails) {
+        boundFineScrubbingThumbnails.removeEventListener('mousemove', handleFineScrubbingPointerMove);
+        boundFineScrubbingThumbnails.removeEventListener('mouseleave', clearPreviewTimelineTime);
+      }
+
+      boundFineScrubbingThumbnails = fineScrubbingThumbnails;
+      if (boundFineScrubbingThumbnails) {
+        boundFineScrubbingThumbnails.addEventListener('mousemove', handleFineScrubbingPointerMove);
+        boundFineScrubbingThumbnails.addEventListener('mouseleave', clearPreviewTimelineTime);
+      }
+    }
+  }
+
   function syncVideoListeners() {
     const video = getVideoElement();
     if (video === boundVideoElement) return;
@@ -1229,6 +1302,7 @@
       }
 
       syncVideoListeners();
+      syncTimelineListeners();
       ensureButtons();
       void syncMomentsForCurrentVideo();
     });
