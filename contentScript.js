@@ -426,10 +426,18 @@
 
   function getTranscriptSegmentNodes() {
     const root = getTranscriptContentRoot();
-    if (!root) return [];
+    if (root) {
+      const nodes = root.querySelectorAll('ytd-transcript-segment-renderer, transcript-segment-view-model');
+      if (nodes.length) return Array.from(nodes);
+    }
 
-    const nodes = root.querySelectorAll('ytd-transcript-segment-renderer, transcript-segment-view-model');
-    return Array.from(nodes);
+    const panel = findTranscriptPanel();
+    if (!panel) return [];
+
+    const fallbackNodes = panel.querySelectorAll(
+      'ytd-transcript-renderer ytd-transcript-segment-renderer, ytd-transcript-search-panel-renderer ytd-transcript-segment-renderer, #segments-container ytd-transcript-segment-renderer, transcript-segment-view-model'
+    );
+    return Array.from(fallbackNodes);
   }
 
   function readTranscriptSegments() {
@@ -539,9 +547,17 @@
     }
 
     const hasTranscriptContent = await waitForTranscriptContent(9000);
-    if (!hasTranscriptContent) return [];
+    if (!hasTranscriptContent) {
+      const fallbackItems = readTranscriptSegments();
+      if (fallbackItems.length) return fallbackItems;
+      return [];
+    }
 
-    const items = await readAllTranscriptSegments(45000);
+    let items = await readAllTranscriptSegments(45000);
+    if (!items.length) {
+      await sleep(350);
+      items = readTranscriptSegments();
+    }
     await dismissTranscriptPanelAfterCapture();
     return items;
   }
