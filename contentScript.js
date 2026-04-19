@@ -75,12 +75,12 @@
 
     function getVideoDuration() {
         const video = getVideoElement();
-        const duration = Number(video?.duration);
+        const duration = Number(video && video.duration);
         if (Number.isFinite(duration) && duration > 0) return duration;
 
         try {
             const player = document.getElementById('movie_player');
-            const fallback = Number(player?.getDuration?.());
+            const fallback = Number(player && typeof player.getDuration === 'function' ? player.getDuration() : NaN);
             if (Number.isFinite(fallback) && fallback > 0) return fallback;
         } catch {}
 
@@ -93,7 +93,7 @@
                 document.querySelector('h1.ytd-watch-metadata yt-formatted-string') ||
                 document.querySelector('h1.title yt-formatted-string') ||
                 document.querySelector('h1 yt-formatted-string');
-            let title = (titleNode?.textContent || document.title || '').trim();
+            let title = ((titleNode && titleNode.textContent) || document.title || '').trim();
             title = title.replace(/\s*-\s*YouTube\s*$/i, '').trim();
             return title || 'youtube-transcript';
         } catch {
@@ -196,19 +196,25 @@
 
         try {
             const list = document.querySelector('ytd-transcript-segment-list-renderer');
-            const panel = list?.closest?.('ytd-engagement-panel-section-list-renderer');
+            const panel = list && typeof list.closest === 'function' ? list.closest('ytd-engagement-panel-section-list-renderer') : null;
             if (panel) return panel;
         } catch {}
 
         try {
             const modernSegment = document.querySelector('transcript-segment-view-model');
-            const panel = modernSegment?.closest?.('ytd-engagement-panel-section-list-renderer');
+            const panel =
+                modernSegment && typeof modernSegment.closest === 'function'
+                    ? modernSegment.closest('ytd-engagement-panel-section-list-renderer')
+                    : null;
             if (panel) return panel;
         } catch {}
 
         try {
             const transcriptRenderer = document.querySelector('ytd-transcript-renderer');
-            const panel = transcriptRenderer?.closest?.('ytd-engagement-panel-section-list-renderer');
+            const panel =
+                transcriptRenderer && typeof transcriptRenderer.closest === 'function'
+                    ? transcriptRenderer.closest('ytd-engagement-panel-section-list-renderer')
+                    : null;
             if (panel) return panel;
         } catch {}
 
@@ -296,8 +302,8 @@
     function getCaptionTracksFromPlayerResponse(playerResponse) {
         try {
             const tracks =
-            playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks ||
-            playerResponse?.captions?.playerCaptionsRenderer?.captionTracks || [];
+            (((playerResponse || {}).captions || {}).playerCaptionsTracklistRenderer || {}).captionTracks ||
+            (((playerResponse || {}).captions || {}).playerCaptionsRenderer || {}).captionTracks || [];
             return Array.isArray(tracks) ? tracks : [];
         } catch {
             return [];
@@ -306,7 +312,7 @@
 
     function pickBestCaptionTrack(tracks) {
         if (!Array.isArray(tracks) || !tracks.length) return null;
-        const preferred = tracks.find((track) => String(track?.kind || '').toLowerCase() !== 'asr');
+        const preferred = tracks.find((track) => String(track && track.kind || '').toLowerCase() !== 'asr');
         return preferred || tracks[0] || null;
     }
 
@@ -318,17 +324,17 @@
             return [];
         }
 
-        const events = Array.isArray(data?.events) ? data.events : [];
+        const events = Array.isArray(data && data.events) ? data.events : [];
         const items = [];
 
         for (const event of events) {
-            const segments = Array.isArray(event?.segs) ? event.segs : [];
+            const segments = Array.isArray(event && event.segs) ? event.segs : [];
             const text = segments
-                .map((segment) => String(segment?.utf8 || '').replace(/\n+/g, ' ').trim())
+                .map((segment) => String(segment && segment.utf8 || '').replace(/\n+/g, ' ').trim())
                 .filter(Boolean)
                 .join('')
                 .trim();
-            const startMs = Number(event?.tStartMs);
+            const startMs = Number(event && event.tStartMs);
             if (!text || !Number.isFinite(startMs)) continue;
             items.push({ time: formatTime(startMs / 1000), text });
         }
@@ -359,7 +365,7 @@
         const playerResponse = getPlayerResponse();
         const tracks = getCaptionTracksFromPlayerResponse(playerResponse);
         const bestTrack = pickBestCaptionTrack(tracks);
-        const baseUrl = bestTrack?.baseUrl;
+        const baseUrl = bestTrack && bestTrack.baseUrl;
         if (!baseUrl) return [];
 
         const transcriptUrl = baseUrl.includes('fmt=') ? baseUrl : `${baseUrl}&fmt=json3`;
@@ -403,7 +409,7 @@
         const directPrimary = document.querySelector(
             '#primary-button ytd-button-renderer yt-button-shape button, #primary-button tp-yt-paper-button'
         );
-        const directLabel = (directPrimary?.textContent || '').trim().toLowerCase();
+        const directLabel = ((directPrimary && directPrimary.textContent) || '').trim().toLowerCase();
         if (directPrimary && /transcript|транскрипт|расшифровка|стенограмма/.test(directLabel)) return directPrimary;
 
         const matchWords = ['transcript', 'show transcript', 'open transcript', 'транскрипт', 'расшифровка', 'стенограмма'];
@@ -464,8 +470,8 @@
                     segment.querySelector('yt-formatted-string') ||
                     segment.querySelector('.ytAttributedStringHost') ||
                     segment.querySelector('span[role="text"]');
-                const time = (timeNode?.textContent || '').trim();
-                const text = (textNode?.textContent || '').replace(/\s+/g, ' ').trim();
+                const time = ((timeNode && timeNode.textContent) || '').trim();
+                const text = ((textNode && textNode.textContent) || '').replace(/\s+/g, ' ').trim();
                 if (!time && !text) return null;
                 const key = `${time}\n${text}`;
                 if (seen.has(key)) return null;
@@ -581,8 +587,8 @@
     function buildTranscriptText(items) {
         return items
             .map((item) => {
-                const time = String(item?.time || '').trim();
-                const text = String(item?.text || '').replace(/\s+/g, ' ').trim();
+                const time = String(item && item.time || '').trim();
+                const text = String(item && item.text || '').replace(/\s+/g, ' ').trim();
                 if (!time) return text;
                 return `[${time}] ${text}`;
             })
@@ -668,13 +674,13 @@
     }
 
     function resetButtonState(button) {
-        setButtonState(button, 'idle', button?.dataset.defaultLabel || 'Action');
+        setButtonState(button, 'idle', button && button.dataset ? button.dataset.defaultLabel || 'Action' : 'Action');
     }
 
     function setTemporaryState(button, state, label, timeoutMs) {
         setButtonState(button, state, label);
         window.setTimeout(() => {
-        if (!button?.isConnected) return;
+            if (!button || !button.isConnected) return;
             if (button.dataset.state !== state) return;
             resetButtonState(button);
         }, timeoutMs);
@@ -761,7 +767,7 @@
                 setButtonState(button, 'loading', 'Pasting moments JSON...');
 
                 try {
-        if (!navigator.clipboard?.readText) {
+                    if (!navigator.clipboard || typeof navigator.clipboard.readText !== 'function') {
                         throw new Error('Clipboard access is unavailable');
                     }
 
@@ -771,7 +777,7 @@
                     showToast(`Applied ${moments.length} custom moments`, 'success');
                     setTemporaryState(button, 'success', 'Moments applied', 2200);
                 } catch (error) {
-                const message = String(error?.message || 'Invalid clipboard JSON');
+                    const message = String(error && error.message || 'Invalid clipboard JSON');
                     showToast(message, 'error');
                     setTemporaryState(button, 'error', 'Invalid clipboard JSON', 2600);
                 }
@@ -788,7 +794,7 @@
     function extractMomentItems(payload) {
         if (Array.isArray(payload)) return payload;
         for (const key of MOMENT_ITEM_KEYS) {
-            if (Array.isArray(payload?.[key])) return payload[key];
+            if (payload && Array.isArray(payload[key])) return payload[key];
         }
         return [];
     }
@@ -867,7 +873,7 @@
 
     function getExtensionStorageArea() {
         try {
-        return globalThis.chrome?.storage?.local || null;
+        return globalThis.chrome && globalThis.chrome.storage ? globalThis.chrome.storage.local || null : null;
         } catch {}
         return null;
     }
@@ -883,10 +889,10 @@
 
     async function readStoredValue(key) {
         const storageArea = getExtensionStorageArea();
-        if (storageArea?.get) {
+        if (storageArea && storageArea.get) {
             try {
                 const result = await storageArea.get(key);
-                return result?.[key];
+                return result ? result[key] : undefined;
             } catch {}
         }
 
@@ -900,7 +906,7 @@
 
     async function writeStoredValue(key, value) {
         const storageArea = getExtensionStorageArea();
-        if (storageArea?.set) {
+        if (storageArea && storageArea.set) {
             try {
                 await storageArea.set({
                     [key]: value });
@@ -918,7 +924,7 @@
 
     function extractStoredMoments(payload) {
         if (!payload || typeof payload !== 'object') return [];
-        const items = Array.isArray(payload?.moments) ? payload.moments : extractMomentItems(payload);
+        const items = Array.isArray(payload && payload.moments) ? payload.moments : extractMomentItems(payload);
         return normalizeMoments(items);
     }
 
@@ -935,13 +941,17 @@
     }
 
     function clearMomentUi() {
-        document.getElementById(MOMENTS_PANEL_ID)?.remove();
-        document.getElementById(MOMENTS_MARKERS_ID)?.remove();
-        document.getElementById(MOMENTS_BADGE_ID)?.remove();
+        const panel = document.getElementById(MOMENTS_PANEL_ID);
+        const markers = document.getElementById(MOMENTS_MARKERS_ID);
+        const badge = document.getElementById(MOMENTS_BADGE_ID);
+        if (panel) panel.remove();
+        if (markers) markers.remove();
+        if (badge) badge.remove();
     }
 
     function getPlaybackTime() {
-        return Number(getVideoElement()?.currentTime || 0);
+        const video = getVideoElement();
+        return Number(video && video.currentTime || 0);
     }
 
     function getMomentAtTime(time) {
@@ -1015,7 +1025,7 @@
 
     function resolveTimelinePreviewTime(event, target) {
         const element = target;
-        if (!element || typeof event?.clientX !== 'number') return null;
+        if (!element || !event || typeof event.clientX !== 'number') return null;
 
         const duration = getVideoDuration();
         if (!duration) return null;
@@ -1040,13 +1050,15 @@
     function renderMomentMarkers() {
         const host = document.querySelector('.ytp-timed-markers-container');
         if (!host || !activeMoments.length) {
-            document.getElementById(MOMENTS_MARKERS_ID)?.remove();
+            const markers = document.getElementById(MOMENTS_MARKERS_ID);
+            if (markers) markers.remove();
             return;
         }
 
         const duration = getVideoDuration();
         if (!duration) {
-            document.getElementById(MOMENTS_MARKERS_ID)?.remove();
+            const markers = document.getElementById(MOMENTS_MARKERS_ID);
+            if (markers) markers.remove();
             return;
         }
 
@@ -1078,9 +1090,10 @@
 
     function renderMomentBadge() {
         const leftControls = document.querySelector('.ytp-left-controls');
-        const timeDisplay = leftControls?.querySelector('.ytp-time-display');
+        const timeDisplay = leftControls ? leftControls.querySelector('.ytp-time-display') : null;
         if (!timeDisplay || !activeMoments.length) {
-            document.getElementById(MOMENTS_BADGE_ID)?.remove();
+            const badge = document.getElementById(MOMENTS_BADGE_ID);
+            if (badge) badge.remove();
             return;
         }
 
@@ -1136,7 +1149,7 @@
     }
 
     function updateMomentPanelSelection(panel, current) {
-        const list = panel?.querySelector('.ytp-custom-moments-list');
+        const list = panel ? panel.querySelector('.ytp-custom-moments-list') : null;
         if (!list) return;
 
         let activeItem = null;
@@ -1207,15 +1220,17 @@
 
     function renderMomentPanel() {
         if (!ENABLE_MOMENTS_PANEL) {
-            document.getElementById(MOMENTS_PANEL_ID)?.remove();
+            const existingPanel = document.getElementById(MOMENTS_PANEL_ID);
+            if (existingPanel) existingPanel.remove();
             return;
         }
 
         const chromeBottom = document.querySelector('.ytp-chrome-bottom');
-        const progressContainer = chromeBottom?.querySelector('.ytp-progress-bar-container');
-        const controls = chromeBottom?.querySelector('.ytp-chrome-controls');
+        const progressContainer = chromeBottom ? chromeBottom.querySelector('.ytp-progress-bar-container') : null;
+        const controls = chromeBottom ? chromeBottom.querySelector('.ytp-chrome-controls') : null;
         if (!chromeBottom || !progressContainer || !controls || !activeMoments.length) {
-            document.getElementById(MOMENTS_PANEL_ID)?.remove();
+            const panel = document.getElementById(MOMENTS_PANEL_ID);
+            if (panel) panel.remove();
             return;
         }
 
@@ -1364,8 +1379,8 @@
         const pasteExisting = document.getElementById(PASTE_BUTTON_ID);
 
         if (!isWatchPage()) {
-            downloadExisting?.remove();
-            pasteExisting?.remove();
+            if (downloadExisting) downloadExisting.remove();
+            if (pasteExisting) pasteExisting.remove();
             clearMomentUi();
             return;
         }
@@ -1378,7 +1393,7 @@
         const fullscreen = host.querySelector('.ytp-fullscreen-button');
 
         if (downloadButton.parentElement !== host) {
-            if (fullscreen?.parentElement === host) {
+            if (fullscreen && fullscreen.parentElement === host) {
                 host.insertBefore(downloadButton, fullscreen);
             } else {
                 host.appendChild(downloadButton);
@@ -1387,7 +1402,7 @@
         }
 
         if (pasteButton.parentElement !== host) {
-            if (fullscreen?.parentElement === host) {
+            if (fullscreen && fullscreen.parentElement === host) {
                 host.insertBefore(pasteButton, fullscreen);
             } else {
                 host.appendChild(pasteButton);
