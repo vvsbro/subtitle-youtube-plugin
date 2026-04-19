@@ -41,6 +41,13 @@
 
     const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
+    function firstDefined(...values) {
+        for (const value of values) {
+            if (value !== null && value !== undefined) return value;
+        }
+        return undefined;
+    }
+
     function isWatchPage() {
         try {
             const url = new URL(window.location.href);
@@ -799,14 +806,15 @@
                 .replace(/\s+/g, ' ')
                 .trim();
 
-            const rawTime =
-                item.time ??
-                item.timestamp ??
-                item.timecode ??
-                item.start ??
-                item.startTime ??
-                item.seconds ??
-                item.at;
+            const rawTime = firstDefined(
+                item.time,
+                item.timestamp,
+                item.timecode,
+                item.start,
+                item.startTime,
+                item.seconds,
+                item.at
+            );
 
             const seconds = parseTimecode(rawTime);
             if (!title || !Number.isFinite(seconds)) continue;
