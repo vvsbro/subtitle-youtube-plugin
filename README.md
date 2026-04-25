@@ -11,56 +11,56 @@
 
 </div>
 
-YouTube Subtitle Downloader добавляет в YouTube-плеер две аккуратные кнопки: скачать субтитры в `.txt` и вставить готовый JSON с таймкодами обратно поверх видео. Основной сценарий простой: забрал субтитры, загрузил файл в ChatGPT, Gemini или любую другую нейронку, попросил сделать выжимку, главы, таймкоды или план работы с контекстом.
+YouTube Subtitle Downloader adds two clean actions directly to the YouTube player: export the current video's subtitles as a `.txt` file, then paste AI-generated JSON moments back onto the video timeline. The workflow is built for ChatGPT, Gemini, Claude, or any other model that can work with long video context.
 
-## Что умеет
+## Overview
 
-- Скачивает субтитры текущего YouTube-видео в `.txt`.
-- Добавляет в файл готовые AI-команды для генерации моментов.
-- Сохраняет текст с таймкодами в формате `[0:42] фраза из видео`.
-- Читает JSON из буфера обмена и рисует кастомные моменты на таймлайне плеера.
-- Запоминает моменты отдельно для каждого видео через `chrome.storage`.
-- Поддерживает JSON из ChatGPT, Gemini, Claude и других LLM, если структура совпадает.
+- Download subtitles from the current YouTube video as a `.txt` file.
+- Export transcript lines with readable timestamps like `[0:42] spoken text`.
+- Append ready-to-use AI prompt blocks to the downloaded file.
+- Paste moments JSON from the clipboard and render custom markers on the YouTube timeline.
+- Store custom moments per video with `chrome.storage`.
+- Keep the last valid moments in place if a new JSON paste fails.
 
 ## AI Workflow
 
-1. Открой видео на YouTube.
-2. Нажми кнопку `Download subtitles` в панели плеера.
-3. Загрузи скачанный `.txt` в ChatGPT, Gemini или другую нейронку.
-4. Попроси модель сжать контекст, найти важные места или собрать таймкоды.
-5. Скопируй JSON с моментами.
-6. Нажми `Paste moments JSON` на YouTube и получи метки прямо на таймлайне.
+1. Open a YouTube video.
+2. Click `Download subtitles` in the player controls.
+3. Upload the downloaded `.txt` file to ChatGPT, Gemini, Claude, or another LLM.
+4. Ask the model to summarize the video, compress the context, find key points, or generate timestamps.
+5. Copy the returned JSON.
+6. Click `Paste moments JSON` on YouTube and get AI-generated markers directly on the timeline.
 
-## Для чего это удобно
+## Use Cases
 
-- `Разбор длинных видео`: быстро получить краткую выжимку без ручного просмотра.
-- `Работа с контекстом`: загрузить субтитры в нейронку и задавать вопросы по видео.
-- `Таймкоды`: попросить модель найти главы, сильные моменты, ошибки, тезисы или TODO.
-- `Монтаж`: получить список важных фрагментов для нарезки.
-- `Обучение`: превратить лекцию или подкаст в структурированный конспект.
+- `Long video analysis`: turn a full transcript into a short, useful summary.
+- `AI context work`: upload subtitles and ask questions about the video.
+- `Timestamps`: generate chapters, highlights, mistakes, claims, or TODO items.
+- `Editing`: find strong fragments for clips or shorts.
+- `Learning`: convert lectures, interviews, and podcasts into structured notes.
 
-## Готовый промпт
+## Ready Prompt
 
 ```text
-Проанализируй субтитры из файла и верни только валидный JSON.
+Analyze the uploaded transcript and return only valid JSON.
 
-Нужно найти 8-16 самых важных моментов видео.
-Каждый момент должен быть коротким, понятным и привязанным к точному таймкоду.
+Find 8-16 of the most important moments in the video.
+Each moment must be short, readable, and attached to an accurate timestamp.
 
-Формат:
+Format:
 {
-  "video_title": "Название видео",
+  "video_title": "Video title",
   "moments": [
-    { "title": "Короткое название момента", "time": "0:00" }
+    { "title": "Short moment title", "time": "0:00" }
   ]
 }
 
-Правила:
-- Верни только JSON, без Markdown и объяснений.
-- Сортируй моменты по времени.
-- Используй формат mm:ss или hh:mm:ss.
-- Не дублируй похожие моменты.
-- Названия делай короткими, чтобы они нормально смотрелись на таймлайне.
+Rules:
+- Return JSON only. No Markdown. No explanation.
+- Sort moments by time ascending.
+- Use mm:ss or hh:mm:ss.
+- Remove duplicates and weak overlaps.
+- Keep titles short enough to look good on a video timeline.
 ```
 
 ## Expected JSON
@@ -78,22 +78,22 @@ YouTube Subtitle Downloader добавляет в YouTube-плеер две ак
 
 The parser is forgiving: it also accepts arrays under `chapters`, `items`, or `segments`, and time fields named `timestamp`, `timecode`, `start`, `startTime`, `seconds`, or `at`.
 
-## Как установить
+## Local Install
 
 ```text
-1. Открой chrome://extensions/
-2. Включи Developer mode
-3. Нажми Load unpacked
-4. Выбери папку с этим репозиторием
-5. Открой YouTube-видео и проверь кнопки в панели плеера
+1. Open chrome://extensions/
+2. Enable Developer mode
+3. Click Load unpacked
+4. Select this repository folder
+5. Open a YouTube video and check the player controls
 ```
 
-## Как пользоваться
+## Controls
 
-- `Download subtitles`: скачивает субтитры и добавляет в конец файла готовые команды для ChatGPT.
-- `Paste moments JSON`: берет JSON из буфера обмена, валидирует его и показывает моменты на видео.
-- Если новый JSON сломан, последние рабочие моменты для текущего видео остаются на месте.
-- Моменты переживают перезагрузку страницы, но привязаны только к конкретному YouTube-видео.
+- `Download subtitles`: extracts subtitles and downloads a `.txt` file with AI prompts included.
+- `Paste moments JSON`: reads JSON from the clipboard, validates it, and renders moments on the video timeline.
+- Saved moments survive page reloads and are restored only for the matching video.
+- If pasted JSON is invalid, the previous valid moments stay visible.
 
 ## Tech Stack
 
